@@ -19,7 +19,7 @@ fn setup_last_opened(mut commands: Commands, pkv: Res<PkvStore>) {
     commands.insert_resource(last_opened);
 }
 
-const LAST_OPENED_SIZE: usize = 10;
+pub const LAST_OPENED_SIZE: usize = 10;
 
 #[derive(Serialize, Deserialize, Resource)]
 pub struct LastOpened {
@@ -35,5 +35,35 @@ impl Default for LastOpened {
 }
 
 pub fn add_last_opened_path(mut pkv: ResMut<PkvStore>, mut last_opened: ResMut<LastOpened>, mut reader: MessageReader<FileResult>) {
-    // TODO
+    let mut new_entry_read = None;
+    for msg in reader.read() {
+        new_entry_read = Some(msg);
+    }
+
+    match new_entry_read {
+        None => {
+            error!("No FileResult passed to function.")
+        }
+        Some(file_result) if file_result.path.is_empty() => {
+            error!("Passed path is empty, cannot add to recently opened.")
+        }
+        Some(file_result) => {
+            match last_opened.entries.clone().into_iter().position(|entry| entry.path == file_result.path) {
+                Some(0) => return,
+                Some(index) => {
+                    for i in index..LAST_OPENED_SIZE - 1 {
+                        last_opened.entries[i] = last_opened.entries[i + 1].clone();
+                    }
+                },
+                None => {}
+            }
+
+            last_opened.entries[LAST_OPENED_SIZE - 1] = file_result.clone();
+            last_opened.entries.rotate_right(1);
+
+            if let Err(error) = pkv.set("last_opened", last_opened.as_ref()) {
+                error!("could not save recently opened files: {error}");
+            }
+        }
+    }
 }
