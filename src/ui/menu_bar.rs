@@ -1,4 +1,3 @@
-use std::path::Path;
 use crate::viewer::kmp::SaveFile;
 
 use super::{
@@ -11,7 +10,6 @@ use bevy::prelude::*;
 use bevy_egui::egui::{self, Align, Button, Layout};
 use strum::IntoEnumIterator;
 use crate::ui::last_opened::LastOpened;
-use crate::ui::util::FileResult;
 
 pub fn show_menu_bar(ui: &mut egui::Ui, world: &mut World) {
     egui::Panel::top("top_panel").show(ui, |ui| {
@@ -38,7 +36,7 @@ pub fn show_menu_bar(ui: &mut egui::Ui, world: &mut World) {
                 ui.menu_button("Load Recent", |ui| {
                     for n in 0..crate::ui::last_opened::LAST_OPENED_SIZE {
                         let file_result = &world.resource::<LastOpened>().entries[n];
-                        if file_result.path.is_empty() {
+                        if file_result.path.as_os_str().is_empty() {
                             break;
                         }
                         if ui.button(file_result.clone().path.into_os_string().into_string().unwrap()).clicked() {
