@@ -1,4 +1,4 @@
-use super::{ui_state::KmpFilePath, util::get_egui_ctx, util::FileResult, util::FileSource};
+use super::{ui_state::KmpFilePath, util::get_egui_ctx, util::FileResult, util::FileSource, last_opened::LastOpened};
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_egui::egui::Align2;
 use egui_file::{FileDialog, State as FileDialogState};
@@ -51,6 +51,7 @@ pub fn show_file_dialog(world: &mut World) {
 #[derive(SystemParam)]
 pub struct FileDialogManager<'w> {
     file_dialog: ResMut<'w, FileDialogRes>,
+    last_opened: Res<'w, LastOpened>,
     // Optional because the dialog manager also handles opening the first course.
     kmp_path: Option<Res<'w, KmpFilePath>>,
 }
@@ -74,6 +75,11 @@ impl FileDialogManager<'_> {
                 }
                 false
             }));
+        if let Some(recent_file) = self.last_opened.most_recent() {
+            if let Some(parent) = recent_file.path.parent() {
+                dialog = dialog.initial_path(parent.to_path_buf());
+            }
+        }
         dialog.open();
         self.file_dialog.0 = Some((dialog, FileSource::OpenKmpKclDialog));
     }

@@ -26,6 +26,12 @@ pub struct LastOpened {
     pub entries: [FileResult; LAST_OPENED_SIZE]
 }
 
+impl LastOpened {
+    pub fn most_recent(&self) -> Option<&FileResult> {
+        self.entries.first()
+    }
+}
+
 impl Default for LastOpened {
     fn default() -> Self {
         Self {
@@ -44,7 +50,7 @@ pub fn add_last_opened_path(mut pkv: ResMut<PkvStore>, mut last_opened: ResMut<L
         None => {
             error!("No FileResult passed to function.")
         }
-        Some(file_result) if file_result.path.is_empty() => {
+        Some(file_result) if file_result.path.as_os_str().is_empty() => {
             error!("Passed path is empty, cannot add to recently opened.")
         }
         Some(file_result) => {
